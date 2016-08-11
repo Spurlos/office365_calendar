@@ -1,0 +1,9 @@
+name: Office365 Calendar Integration
+type: module
+description: Module provides Office365 calendar API integration for fetching user events to his\her profile view. Uses OAuth 2.0 for authentication and FullCalendar.js for display.
+core: 8.1.x
+package: Custom
+dependencies:
+  - fullcalendar_api
+  - profile
+  - encrypt

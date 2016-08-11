@@ -1,0 +1,25 @@
+
+office365_calendar.test_controller_calendar:
+  path: '/testoffice365'
+  defaults:
+    _controller: '\Drupal\office365_calendar\Controller\TestController::calendar'
+    _title: 'Office365 Calendar Test'
+  requirements:
+    _permission: 'access content'
+
+office365_calendar.settings:
+  path: '/admin/config/office365_calendar'
+  defaults:
+    _form: '\Drupal\office365_calendar\Form\SettingsForm'
+    _title: 'Office365 calendar'
+  requirements:
+    _permission: 'administer site configuration'
+  
+
+office365_calendar.callback:
+  path: '/office365_callback'
+  defaults:
+    _controller: '\Drupal\office365_calendar\Controller\CallbackController::callback'
+    _title: 'callback'
+  requirements:
+    _permission: 'access content'

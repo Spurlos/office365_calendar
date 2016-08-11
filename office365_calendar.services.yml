@@ -1,0 +1,5 @@
+services:
+  office365_oauth2:
+    class: Drupal\office365_calendar\Office365\Oauth2Service
+    arguments: ["@config.factory", "@user.data", "@encryption"]
+

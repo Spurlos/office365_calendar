@@ -1,0 +1,21 @@
+# Schema for the configuration files of the Office365 Calendar module.
+
+office365_calendar.settings:
+  type: config_object
+  label: 'Office365 API settings'
+  mapping:
+    client_id:
+      type: string
+      label: 'Client ID'
+    client_secret:
+      type: string
+      label: 'Client Secret'
+    redirect_URI:
+      type: string
+      label: 'Redirect URI'
+    encryption_profile:
+      type: string
+      label: 'Encryption profile'
+    profile_type:
+      type: string
+      label: 'User profile type'

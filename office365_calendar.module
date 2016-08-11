@@ -1,0 +1,171 @@
+<?php
+
+/**
+ * @file
+ * Contains office365_calendar.module..
+ */
+
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\office365_calendar\Office365\CalendarAPI;
+use Drupal\profile\Entity\ProfileInterface;
+use Drupal\profile\Entity\ProfileType;
+
+/**
+ * Implements hook_help().
+ */
+function office365_calendar_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the office365_calendar module.
+    case 'help.page.office365_calendar':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Module provides Office365 calendar API integration for fetching user events to local view. Uses OAuth 2.0 for authentication and FullCalendar.js for display.') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/*
+ * Implementation of hook_form_alter()
+ */
+function office365_calendar_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == "user_form") {
+    $form['office365_calendar'] = array(
+      '#type' => 'details',
+      '#title' => t('Office365 settings'),
+      '#open' => TRUE,
+      '#weight' => 0,
+    );
+
+    $oauth2 = \Drupal::service('office365_oauth2');
+    $uid = \Drupal::routeMatch()->getParameter('user')->id();
+    if ($oauth2->tokenExists($uid)) {
+      $userdata = \Drupal::service('user.data');
+      $calendarid = $userdata->get('office365_calendar', $uid, 'calendar');
+
+      $api = new CalendarAPI($oauth2->getAccessToken($uid));
+      $calendars = $api->getCalendars();
+      foreach ($calendars['value'] as $calendar) {
+        $options[$calendar['Id']] = $calendar['Name'];
+      }
+      $calendarexists = \Drupal::service('user.data')->get('office365_calendar',
+        \Drupal::routeMatch()->getParameter('user')->id(),'calendar');
+      if (!$calendarexists){
+        reset($options);
+        \Drupal::service('user.data')->set('office365_calendar', \Drupal::routeMatch()->getParameter('user')->id(),
+          'calendar', key($options));
+      }
+      $form['office365_calendar']['selector'] = array(
+        '#type' => 'select',
+        '#title' => t('Schedule calendar'),
+        '#options' => $options,
+        '#size' => 1,
+        '#default_value' => $calendarid,
+        '#description' => t('Select the desired calendar from your Office365 calendar list that will be shown on your profile page.'),
+      );
+      $form['actions']['submit']['#submit'][] = 'office365_calendar_select';
+
+      $myinfo = $api->getMe();
+      $form['office365_calendar']['disconnect'] = array(
+        '#type' => 'button',
+        '#name' =>'office365_disconnect',
+        '#value' => t('Disconnect Office365 account'),
+        '#executes_submit_callback' => TRUE,
+        '#submit' => array('office365_calendar_disconnect'),
+      );
+
+      $form['office365_calendar']['email'] = array(
+        '#markup' => '<br>' . $myinfo['DisplayName'] . ' (' . $myinfo['EmailAddress'] . ')',
+      );
+    }
+    else {
+      $form['office365_calendar']['authenticate'] = array(
+        '#type' => 'button',
+        '#name' => 'office365_authenticate',
+        '#value' => t('Connect Office365 account'),
+        '#executes_submit_callback' => TRUE,
+        '#submit' => array('office365_calendar_authenticate'),
+      );
+    }
+  }
+}
+
+function office365_calendar_authenticate($form, FormStateInterface $form_state){
+  $form_state->setRedirect('office365_calendar.callback');
+}
+
+function office365_calendar_disconnect(){
+  \Drupal::service('office365_oauth2')->deleteToken(\Drupal::routeMatch()->getParameter('user')->id());
+}
+
+function office365_calendar_select($form, FormStateInterface $form_state){
+  \Drupal::service('user.data')->set(
+    'office365_calendar',
+    \Drupal::routeMatch()->getParameter('user')->id(),
+    'calendar',
+    $form_state->getValue('selector')
+  );
+}
+
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function office365_calendar_entity_extra_field_info() {
+  $profile_type = \Drupal::service('config.factory')->get('office365_calendar.settings')->get('profile_type');
+  //foreach (ProfileType::loadMultiple() as $bundle) {
+    $extra['profile'][$profile_type]['display']['office365_calendar_field'] = array(
+      'label' => t('Office365 calendar'),
+      'description' => t('A calendar pseudo-field for profile entities'),
+      'weight' => 100,
+      'visible' => FALSE,
+    );
+  //}
+
+  return $extra;
+}
+
+function office365_calendar_profile_view(array &$build, ProfileInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+  if ($display->getComponent('office365_calendar_field')) {
+    $oauth2 = \Drupal::service('office365_oauth2');
+    $uid = $entity->getOwnerId();
+    if ($oauth2->tokenExists($uid)) {
+      $api = new CalendarAPI($oauth2->getAccessToken($uid));
+      $userdata = \Drupal::service('user.data');
+      $calendar = (string) $userdata->get('office365_calendar', $uid, 'calendar');
+      $query = [
+        'startdatetime' => '2016-07-01T00:00:00Z',
+        'enddatetime' => '2016-08-31T00:00:00Z',
+      ];
+      $events = $api->getEvents($calendar, $query);
+      $jsglobal = [];
+      foreach ($events as $event) {
+        $jsevent['title'] = $event['Subject'];
+        $jsevent['start'] = $event['Start']['DateTime'];
+        $jsevent['end'] = $event['End']['DateTime'];
+        $jsglobal[] = $jsevent;
+      }
+
+      // Array of FullCalendar settings.
+      $settings = array(
+        'header' => array(
+          'left' => 'prev,next today',
+          'center' => 'title',
+          'right' => 'month,agendaWeek,agendaDay',
+        ),
+        'defaultDate' => date("Y-m-d"),//'2015-02-12',
+        'editable' => FALSE,
+        'eventLimit' => TRUE, // allow "more" link when too many events
+        'events' => $jsglobal,
+      );
+      $build['office365_calendar_field'] = array(
+        '#theme' => 'fullcalendar_calendar',
+        '#calendar_id' => 'fullcalendar',
+        '#calendar_settings' => $settings,
+      );
+    }
+  }
+}
+

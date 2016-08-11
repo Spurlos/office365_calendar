@@ -1,0 +1,5 @@
+office365_calendar.settings:
+  title: 'Office365 calendar'
+  description: 'Configure Office365 API settings'
+  parent: system.admin_config_development
+  route_name: office365_calendar.settings

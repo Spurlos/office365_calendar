@@ -1,0 +1,30 @@
+{
+  "name": "drupal/office365_calendar",
+  "type": "drupal-module",
+  "description": "Module provides Office365 calendar API integration for fetching user events to local view. Uses OAuth 2.0 for authentication and FullCalendar.js for display.",
+  "keywords": ["Drupal"],
+  "license": "GPL-2.0+",
+  "homepage": "https://www.drupal.org/project/office365_calendar",
+  "minimum-stability": "dev",
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/office365_calendar",
+    "source": "http://cgit.drupalcode.org/office365_calendar"
+  },
+  "require": {
+    "stevenmaguire/oauth2-microsoft": "^0.2.1",
+    "drupal/fullcalendar_api": "~1.0",
+    "drupal/profile": "~1.0",
+    "drupal/encrypt": "~3.0"
+  },
+  "extra": {
+    "patches": {
+      "drupal/real_aes": {
+        "D8 - Update module to use Defuse PHP Encryption 2.0": "https://www.drupal.org/files/issues/d8_update_module_to-2727845-11-do-not-test.patch"
+      },
+      "drupal/profile": {
+        "Limiting of profiles on a role basis works only for non-locked roles": "https://www.drupal.org/files/issues/include-locked-roles-2662112-1.patch"
+      }
+    }
+  }
+}
+

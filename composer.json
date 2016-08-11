@@ -12,9 +12,9 @@
   },
   "require": {
     "stevenmaguire/oauth2-microsoft": "^0.2.1",
-    "drupal/fullcalendar_api": "~1.0",
-    "drupal/profile": "~1.0",
-    "drupal/encrypt": "~3.0"
+    "drupal/fullcalendar_api": "1.x-dev",
+    "drupal/profile": "1.0-alpha4",
+    "drupal/encrypt": "3.0-alpha1"
   },
   "extra": {
     "patches": {

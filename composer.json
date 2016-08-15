@@ -18,9 +18,9 @@
   },
   "require": {
     "stevenmaguire/oauth2-microsoft": "^0.2.1",
-    "drupal/fullcalendar_api": "1.x-dev",
-    "drupal/encrypt": "3.x-dev",
-    "drupal/profile": "1.x-dev"
+    "drupal/fullcalendar_api": "8.*",
+    "drupal/encrypt": "8.*",
+    "drupal/profile": "8.*"
   },
   "extra": {
     "patches": {
